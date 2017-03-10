@@ -23,7 +23,7 @@ type (
 		// ClearBits(startIdx, endIdx uint64)
 
 		Cap() uint64
-		Stats() (int, int, int, int) // #stats
+		Stats() []int // #stats
 	}
 )
 
@@ -142,16 +142,12 @@ func (t *bitset) FindClear(start uint64) (idx uint64, found bool) {
 	return t.root.findclr(start)
 }
 
-func (t *bitset) Stats() (numLeaves, numInodes, numAllSet, numAllClr int) {
+func (t *bitset) Stats() (numNodes []int) {
 
-	for _, l := range t.levels {
-		if l.leaf {
-			numLeaves += l.numNodes
-		} else {
-			numInodes += l.numNodes
-		}
-		numAllSet += l.numAllSetNodes
-		numAllClr += l.numAllClrNodes
+	numNodes = make([]int, len(t.levels))
+
+	for i, l := range t.levels {
+		numNodes[i] = l.numNodes
 	}
 
 	return
