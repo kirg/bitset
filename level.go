@@ -39,6 +39,10 @@ func initLevels(levelBits []uint) (levels []*level, cap uint64) {
 		return nil, 0
 	}
 
+	if levelBits[0] == 0 {
+		return nil, 0
+	}
+
 	levels = make([]*level, len(levelBits))
 	var shift uint
 	var next *level

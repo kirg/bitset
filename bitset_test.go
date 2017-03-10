@@ -7,12 +7,11 @@ import (
 )
 
 var configs = [][]uint{
-	[]uint{0},
 	[]uint{16},
 	[]uint{7, 5},
-	[]uint{6, 8, 0, 0},
+	[]uint{4, 0, 0, 0, 0},
 	[]uint{16, 8, 4, 2, 1},
-	[]uint{1, 0, 1, 0, 1, 0, 1, 0},
+	[]uint{1, 0, 1, 0, 1, 0},
 	[]uint{8, 8, 8, 8, 8, 8, 8, 8},
 }
 
@@ -55,21 +54,28 @@ func TestBitsetSetClear(t *testing.T) {
 
 			i := b.Cap() / 2
 
-			b.Set(i)
+			assert.NotNil(t, b.Set(i))
 			assert.EqualValues(t, b.Count(), 1)
-
-			b.Set(i) // redundant set
-			assert.EqualValues(t, b.Count(), 1)
-
 			assert.EqualValues(t, b.Test(i), true)
 
-			b.Clear(i)
-			assert.EqualValues(t, b.Count(), 0)
+			assert.NotNil(t, b.Set(i))
+			assert.EqualValues(t, b.Count(), 1)
+			assert.EqualValues(t, b.Test(i), true)
 
+			assert.NotNil(t, b.Clear(i))
+			assert.EqualValues(t, b.Count(), 0)
 			assert.EqualValues(t, b.Test(i), false)
 
-			b.Clear(i)
+			assert.NotNil(t, b.Clear(i))
 			assert.EqualValues(t, b.Count(), 0)
+			assert.EqualValues(t, b.Test(i), false)
+
+			i = b.Cap() - 1
+			assert.EqualValues(t, b.Test(i), false)
+			assert.NotNil(t, b.Clear(i))
+			assert.EqualValues(t, b.Test(i), false)
+			assert.NotNil(t, b.Set(i))
+			assert.EqualValues(t, b.Test(i), true)
 		})
 	}
 }
@@ -104,6 +110,11 @@ func TestBitsetFindSet(t *testing.T) {
 
 			idx, found = b.FindSet(0)
 			assert.EqualValues(t, false, found)
+
+			b.Set(b.Cap() - 1)
+			idx, found = b.FindSet(0)
+			assert.EqualValues(t, true, found)
+			assert.EqualValues(t, b.Cap()-1, idx)
 		})
 	}
 }

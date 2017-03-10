@@ -86,6 +86,10 @@ func New(levelBits []uint) Bitset {
 
 	levels, cap := initLevels(levelBits)
 
+	if levels == nil {
+		return nil
+	}
+
 	return &bitset{
 		root:   levels[len(levels)-1].newNode(false, false), // node at max level
 		cap:    cap,
@@ -103,7 +107,7 @@ func (t *bitset) Test(idx uint64) (ret bool) {
 
 func (t *bitset) Set(idx uint64) Bitset {
 
-	if idx > t.cap {
+	if idx >= t.cap {
 		return nil
 	}
 
@@ -116,7 +120,7 @@ func (t *bitset) Set(idx uint64) Bitset {
 
 func (t *bitset) Clear(idx uint64) Bitset {
 
-	if idx > t.cap {
+	if idx >= t.cap {
 		return nil
 	}
 
