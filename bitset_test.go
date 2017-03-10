@@ -1,94 +1,135 @@
 package bitset
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestBitsetNew(t *testing.T) {
+var configs = [][]uint{
+	[]uint{0},
+	[]uint{16},
+	[]uint{7, 5},
+	[]uint{6, 8, 0, 0},
+	[]uint{16, 8, 4, 2, 1},
+	[]uint{1, 0, 1, 0, 1, 0, 1, 0},
+	[]uint{8, 8, 8, 8, 8, 8, 8, 8},
+}
 
-	b := New([]uint{16, 8, 4})
-	assert.EqualValues(t, b.Count(), 0, "new bitset should have count 0")
+func TestBitsetNewCount(t *testing.T) {
+
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
+
+			b := New(cfg)
+
+			assert.EqualValues(t, b.Count(), 0, "new bitset should have count 0")
+		})
+	}
 }
 
 func TestBitsetCap(t *testing.T) {
 
-	b := New([]uint{16, 8, 4})
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-	cap := (1 << (16 + 8 + 4)) - 1
-	assert.EqualValues(t, cap, b.Cap())
+			b := New(cfg)
+
+			var bits uint = 0
+			for _, t := range cfg {
+				bits += t
+			}
+
+			cap := (1 << bits) - 1
+			assert.EqualValues(t, cap, b.Cap())
+		})
+	}
 }
 
 func TestBitsetSetClear(t *testing.T) {
 
-	b := New([]uint{16, 8, 4})
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-	i := b.Cap() / 2
+			b := New(cfg)
 
-	b.Set(i)
-	assert.EqualValues(t, b.Count(), 1)
+			i := b.Cap() / 2
 
-	b.Set(i) // redundant set
-	assert.EqualValues(t, b.Count(), 1)
+			b.Set(i)
+			assert.EqualValues(t, b.Count(), 1)
 
-	assert.EqualValues(t, b.Test(i), true)
+			b.Set(i) // redundant set
+			assert.EqualValues(t, b.Count(), 1)
 
-	b.Clear(i)
-	assert.EqualValues(t, b.Count(), 0)
+			assert.EqualValues(t, b.Test(i), true)
 
-	assert.EqualValues(t, b.Test(i), false)
+			b.Clear(i)
+			assert.EqualValues(t, b.Count(), 0)
 
-	b.Clear(i)
-	assert.EqualValues(t, b.Count(), 0)
+			assert.EqualValues(t, b.Test(i), false)
+
+			b.Clear(i)
+			assert.EqualValues(t, b.Count(), 0)
+		})
+	}
 }
 
 func TestBitsetFindSet(t *testing.T) {
 
-	b := New([]uint{16, 8, 4})
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-	idx, found := b.FindSet(0)
-	assert.EqualValues(t, found, false)
+			b := New(cfg)
 
-	i := b.Cap() / 2
+			idx, found := b.FindSet(0)
+			assert.EqualValues(t, found, false)
 
-	b.Set(i)
-	idx, found = b.FindSet(0)
-	assert.EqualValues(t, true, found)
-	assert.EqualValues(t, i, idx)
+			i := b.Cap() / 2
 
-	idx, found = b.FindSet(i)
-	assert.EqualValues(t, true, found)
-	assert.EqualValues(t, i, idx)
+			b.Set(i)
+			idx, found = b.FindSet(0)
+			assert.EqualValues(t, true, found)
+			assert.EqualValues(t, i, idx)
 
-	idx, found = b.FindSet(i + 1)
-	assert.EqualValues(t, false, found)
+			idx, found = b.FindSet(i)
+			assert.EqualValues(t, true, found)
+			assert.EqualValues(t, i, idx)
 
-	b.Clear(i)
-	idx, found = b.FindSet(0)
-	assert.EqualValues(t, false, found)
+			idx, found = b.FindSet(i + 1)
+			assert.EqualValues(t, false, found)
 
-	idx, found = b.FindSet(0)
-	assert.EqualValues(t, false, found)
+			b.Clear(i)
+			idx, found = b.FindSet(0)
+			assert.EqualValues(t, false, found)
+
+			idx, found = b.FindSet(0)
+			assert.EqualValues(t, false, found)
+		})
+	}
 }
 
 func TestBitsetFindClear(t *testing.T) {
 
-	// b := New([]uint{16, 8, 4})
-	b := New([]uint{4, 4, 4, 4})
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-	idx, found := b.FindClear(0)
-	assert.EqualValues(t, found, true)
-	assert.EqualValues(t, idx, 0)
+			b := New(cfg)
 
-	i := b.Cap() / 2
+			idx, found := b.FindClear(0)
+			assert.EqualValues(t, found, true)
+			assert.EqualValues(t, idx, 0)
 
-	b.Set(i)
-	idx, found = b.FindClear(i)
-	assert.EqualValues(t, true, found)
-	assert.EqualValues(t, i+1, idx)
+			i := b.Cap() / 2
 
-	b.Clear(i)
-	idx, found = b.FindClear(i)
-	assert.EqualValues(t, true, found)
-	assert.EqualValues(t, i, idx)
+			b.Set(i)
+			idx, found = b.FindClear(i)
+			assert.EqualValues(t, true, found)
+			assert.EqualValues(t, i+1, idx)
+
+			b.Clear(i)
+			idx, found = b.FindClear(i)
+			assert.EqualValues(t, true, found)
+			assert.EqualValues(t, i, idx)
+		})
+	}
 }
