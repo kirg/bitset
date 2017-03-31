@@ -57,7 +57,7 @@ func (n *inode) test(l *level, idx uint64) bool {
 		return false
 
 	default:
-		return next.test(l, idx)
+		return next.test(l.next, idx)
 	}
 }
 
@@ -147,7 +147,7 @@ func (n *inode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
 
 		next := n.nodes[i]
 
-		if idx, found = next.findset(l, idx); found {
+		if idx, found = next.findset(l.next, idx); found {
 			return (uint64(i) << l.shift) | idx, true
 		}
 
@@ -163,7 +163,7 @@ func (n *inode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
 
 		next := n.nodes[i]
 
-		if idx, found = next.findclr(l, idx); found {
+		if idx, found = next.findclr(l.next, idx); found {
 			return (uint64(i) << l.shift) | idx, true
 		}
 
