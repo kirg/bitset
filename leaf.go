@@ -17,7 +17,7 @@ type (
 	}
 )
 
-func newAllSetLeaf(l *level) *leaf {
+func newLeafSet(l *level) *leaf {
 
 	bits := make([]uint64, 1+((l.total-1)/64))
 
@@ -32,7 +32,7 @@ func newAllSetLeaf(l *level) *leaf {
 	}
 }
 
-func newAllClrLeaf(l *level) *leaf {
+func newLeafClr(l *level) *leaf {
 
 	bits := make([]uint64, 1+((l.total-1)/64))
 
@@ -47,45 +47,49 @@ func newAllClrLeaf(l *level) *leaf {
 	}
 }
 
-func (n *leaf) test(idx uint64) bool {
+func (n *leaf) test(l *level, idx uint64) bool {
 
 	bindex, bmask := int(idx/64), uint64(1)<<(idx%64)
 	return (n.bits[bindex] & bmask) != 0
 }
 
-func (n *leaf) set(idx uint64) (set, allset bool) {
+func (n *leaf) set(l *level, idx uint64) (set bool, replace node) {
 
 	bindex, bmask := int(idx/64), uint64(1)<<(idx%64)
 
 	// check if bit already set
 	if (n.bits[bindex] & bmask) != 0 {
-		return false, false
+		return false, n
 	}
 
 	n.bits[bindex] |= bmask // set the bit
-	n.numSet++
 
-	return true, n.numSet == n.level.total
+	if n.numSet++; n.numSet == l.total {
+		return true, sparsify(l, n, true)
+	}
+
+	return true, n
 }
 
-func (n *leaf) clr(idx uint64) (cleared, allclear bool) {
+func (n *leaf) clr(l *level, idx uint64) (cleared bool, replace node) {
 
 	bindex, bmask := int(idx/64), uint64(1)<<(idx%64)
 
 	// check if bit already clear
 	if (n.bits[bindex] & bmask) == 0 {
-		return false, false
+		return false, n
 	}
 
 	n.bits[bindex] &= ^bmask // clear the bit
-	n.numSet--
 
-	return true, n.numSet == 0
+	if n.numSet--; n.numSet == 0 {
+		return true, sparsify(l, n, false)
+	}
+
+	return true, n
 }
 
-func (n *leaf) findset(startIdx uint64) (idx uint64, found bool) {
-
-	l := n.level
+func (n *leaf) findset(l *level, startIdx uint64) (idx uint64, found bool) {
 
 	i := int(startIdx)
 	bindex, bmask := (i / 64), uint64(1)<<(uint(i)%64)
@@ -126,9 +130,7 @@ find:
 	return 0, false
 }
 
-func (n *leaf) findclr(startIdx uint64) (idx uint64, found bool) {
-
-	l := n.level
+func (n *leaf) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
 
 	i := int(startIdx)
 	bindex, bmask := (i / 64), uint64(1)<<(uint(i)%64)

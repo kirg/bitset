@@ -10,9 +10,9 @@ var configs = [][]uint{
 	[]uint{16},
 	[]uint{7, 5},
 	[]uint{4, 0, 0, 0, 0},
-	[]uint{16, 8, 4, 2, 1},
+	[]uint{8, 4, 2, 1},
 	[]uint{1, 0, 1, 0, 1, 0},
-	[]uint{8, 8, 8, 8, 8, 8, 8, 8},
+	[]uint{2, 2, 2, 2, 2, 2, 2},
 }
 
 func TestBitsetNewCount(t *testing.T) {
@@ -27,7 +27,7 @@ func TestBitsetNewCount(t *testing.T) {
 	}
 }
 
-func TestBitsetCap(t *testing.T) {
+func TestBitsetMaxIndex(t *testing.T) {
 
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
@@ -39,8 +39,8 @@ func TestBitsetCap(t *testing.T) {
 				bits += t
 			}
 
-			cap := (1 << bits) - 1
-			assert.EqualValues(t, cap, b.Cap())
+			max := (1 << bits) - 1
+			assert.EqualValues(t, max, b.MaxIndex())
 		})
 	}
 }
@@ -80,65 +80,58 @@ func TestBitsetSetClear(t *testing.T) {
 	}
 }
 
-func TestBitsetFindSet(t *testing.T) {
+func TestBitsetNextSet(t *testing.T) {
 
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
 			b := New(cfg)
 
-			idx, found := b.FindSet(0)
+			idx, found := b.NextSet(0)
 			assert.EqualValues(t, found, false)
 
-			i := b.Cap() / 2
+			for i := uint64(0); i < b.Cap(); i++ {
 
-			b.Set(i)
-			idx, found = b.FindSet(0)
-			assert.EqualValues(t, true, found)
-			assert.EqualValues(t, i, idx)
+				b.Set(i)
+				idx, found = b.NextSet(0)
+				assert.EqualValues(t, true, found)
+				assert.EqualValues(t, i, idx)
 
-			idx, found = b.FindSet(i)
-			assert.EqualValues(t, true, found)
-			assert.EqualValues(t, i, idx)
+				idx, found = b.NextSet(i)
+				assert.EqualValues(t, true, found)
+				assert.EqualValues(t, i, idx)
 
-			idx, found = b.FindSet(i + 1)
-			assert.EqualValues(t, false, found)
+				idx, found = b.NextSet(i + 1)
+				assert.EqualValues(t, false, found)
 
-			b.Clear(i)
-			idx, found = b.FindSet(0)
-			assert.EqualValues(t, false, found)
-
-			idx, found = b.FindSet(0)
-			assert.EqualValues(t, false, found)
-
-			b.Set(b.Cap() - 1)
-			idx, found = b.FindSet(0)
-			assert.EqualValues(t, true, found)
-			assert.EqualValues(t, b.Cap()-1, idx)
+				b.Clear(i)
+				idx, found = b.NextSet(0)
+				assert.EqualValues(t, false, found)
+			}
 		})
 	}
 }
 
-func TestBitsetFindClear(t *testing.T) {
+func TestBitsetNextClear(t *testing.T) {
 
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
 			b := New(cfg)
 
-			idx, found := b.FindClear(0)
+			idx, found := b.NextClear(0)
 			assert.EqualValues(t, found, true)
 			assert.EqualValues(t, idx, 0)
 
 			i := b.Cap() / 2
 
 			b.Set(i)
-			idx, found = b.FindClear(i)
+			idx, found = b.NextClear(i)
 			assert.EqualValues(t, true, found)
 			assert.EqualValues(t, i+1, idx)
 
 			b.Clear(i)
-			idx, found = b.FindClear(i)
+			idx, found = b.NextClear(i)
 			assert.EqualValues(t, true, found)
 			assert.EqualValues(t, i, idx)
 		})

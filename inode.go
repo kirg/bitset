@@ -2,208 +2,178 @@ package bitset
 
 import (
 	"fmt"
+	"math"
 )
 
 type (
 	inode struct {
-		level  *level // level context
-		allSet int    // nodes that are all-set
-		allClr int    // nodes that are all-clear
-		nodes  []node // (inode/leaf) nodes
+		level      *level // level context
+		nSet, nClr int    // nodes that are all-set, all-clr
+		nodes      []node // child (inode/leaf) nodes
 	}
 )
 
-func newAllSetInode(l *level) *inode {
+func newInodeSet(l *level) *inode {
 
 	nodes := make([]node, l.total)
 
 	for i := range nodes {
-		nodes[i] = newAllSetNode(l.next)
+		nodes[i] = newNode(l, true, true)
 	}
 
 	return &inode{
-		level:  l,
-		allSet: l.total,
-		allClr: 0,
-		nodes:  nodes,
+		level: l,
+		nSet:  l.total,
+		nClr:  0,
+		nodes: nodes,
 	}
 }
 
-func newAllClrInode(l *level) *inode {
+func newInodeClr(l *level) *inode {
 
 	nodes := make([]node, l.total)
 
 	for i := range nodes {
-		nodes[i] = newAllClrNode(l.next)
+		nodes[i] = newNode(l, true, false) // optional, since allclr is 'nil'
 	}
 
 	return &inode{
-		level:  l,
-		allSet: 0,
-		allClr: l.total,
-		nodes:  nodes,
+		level: l,
+		nSet:  0,
+		nClr:  l.total,
+		nodes: nodes,
 	}
 }
 
-func (n *inode) test(idx uint64) bool {
+func (n *inode) test(l *level, idx uint64) bool {
 
-	l := n.level
-	i, nextIdx := int(idx>>l.shift), idx&l.mask
+	i, idx := int(idx>>l.shift), idx&l.mask
 
-	switch nextNode := n.nodes[i]; nextNode {
-	case allSetNode:
+	switch next := n.nodes[i]; next.(type) {
+	case *setnode:
 		return true
-	case allClrNode:
+
+	case *clrnode:
 		return false
-	default:
-		return nextNode.test(nextIdx)
-	}
-}
-
-func (n *inode) set(idx uint64) (set, allset bool) {
-
-	l := n.level
-	i, nextIdx := int(idx>>l.shift), idx&l.mask
-
-	switch nextNode := n.nodes[i]; nextNode {
-
-	case allSetNode: // check if already set
-		return false, false // no-op
-
-	case allClrNode:
-
-		// de-sparsify node
-
-		l.next.delNode(nextNode)
-		nextNode = l.next.newNode(false, false)
-
-		n.nodes[i] = nextNode
-		n.allClr--
-
-		fallthrough
 
 	default:
-
-		// recurse down to next level
-		set, allset = nextNode.set(nextIdx)
-
-		if !allset {
-			return set, false // not all-set
-		}
-
-		// sparsify with an all-set node
-		l.next.delNode(nextNode)
-		n.nodes[i] = l.next.newNode(true, true)
-
-		n.allSet++
-		return true, n.allSet == l.total
+		return next.test(l, idx)
 	}
 }
 
-func (n *inode) clr(idx uint64) (cleared, allclear bool) {
+func (in *inode) set(l *level, idx uint64) (set bool, replace node) {
 
-	l := n.level
-	i, nextIdx := int(idx>>l.shift), idx&l.mask
+	i, idx := int(idx>>l.shift), idx&l.mask
 
-	switch nextNode := n.nodes[i]; nextNode {
+	next := in.nodes[i]
 
-	case allClrNode: // check if already clear
-		return false, false // no-op
+	set, repl := next.set(l.next, idx)
 
-	case allSetNode:
+	if repl == next {
+		return set, in
+	}
 
-		// de-sparsify node
-		l.next.delNode(nextNode)
-		nextNode = l.next.newNode(true, false)
+	// assert( set == true ) //
 
-		n.nodes[i] = nextNode
-		n.allClr--
+	switch next.(type) {
+	case *setnode:
+		in.nSet--
 
-		fallthrough
+	case *clrnode:
+		in.nClr--
+	}
 
-	default:
-
-		// recurse down to next level
-		cleared, allclear = nextNode.clr(nextIdx)
-
-		if !allclear {
-			return cleared, false // not all-set
+	switch repl.(type) {
+	case *setnode:
+		if in.nSet++; in.nSet == l.total {
+			// sparsify with an all-set node
+			return true, sparsify(l, in, true)
 		}
 
-		// sparsify with an all-clr node
-		l.next.delNode(nextNode)
-		n.nodes[i] = l.next.newNode(false, true)
-
-		n.allClr++
-		return true, n.allClr == l.total
+	case *clrnode:
+		if in.nClr++; in.nClr == l.total {
+			// sparsify with an all-clr node
+			return true, sparsify(l, in, false)
+		}
 	}
+
+	in.nodes[i] = repl // replace nextNode
+	return true, in
 }
 
-func (n *inode) findset(startIdx uint64) (idx uint64, found bool) {
+func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 
-	l := n.level
-	i, nextIdx := int(startIdx>>l.shift), startIdx&l.mask
+	i, idx := int(idx>>l.shift), idx&l.mask
 
-find:
-	for ; i < l.total; i++ {
+	next := in.nodes[i]
 
-		switch nextNode := n.nodes[i]; nextNode {
+	cleared, repl := next.clr(l.next, idx)
 
-		case allSetNode:
-			return (uint64(i) << l.shift) | nextIdx, true
+	if repl == next {
+		return cleared, in
+	}
 
-		case allClrNode:
-			nextIdx = 0
-			continue find
+	// assert( cleared == true ) //
 
-		default:
-			nextIdx, found = nextNode.findset(nextIdx)
+	switch next.(type) {
+	case *setnode:
+		in.nSet--
 
-			if !found {
-				nextIdx = 0
-				continue find
-			}
+	case *clrnode:
+		in.nClr--
+	}
 
-			return (uint64(i) << l.shift) | nextIdx, true
+	switch repl.(type) {
+	case *setnode:
+		if in.nSet++; in.nSet == l.total {
+			// sparsify with an all-set node
+			return true, sparsify(l, in, true)
+		}
+
+	case *clrnode:
+		if in.nClr++; in.nClr == l.total {
+			// sparsify with an all-clr node
+			return true, sparsify(l, in, false)
 		}
 	}
 
-	return 0, false
+	in.nodes[i] = repl // replace nextNode
+	return true, in
 }
 
-func (n *inode) findclr(startIdx uint64) (idx uint64, found bool) {
+func (n *inode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
 
-	l := n.level
-	i, nextIdx := int(startIdx>>l.shift), startIdx&l.mask
+	for i, idx := int(startIdx>>l.shift), startIdx&l.mask; i < l.total; i++ {
 
-find:
-	for ; i < l.total; i++ {
+		next := n.nodes[i]
 
-		switch nextNode := n.nodes[i]; nextNode {
-
-		case allClrNode:
-			return (uint64(i) << l.shift) | nextIdx, true
-
-		case allSetNode:
-			nextIdx = 0
-			continue find
-
-		default:
-			nextIdx, found = nextNode.findclr(nextIdx)
-
-			if !found {
-				nextIdx = 0
-				continue find
-			}
-
-			return (uint64(i) << l.shift) | nextIdx, true
+		if idx, found = next.findset(l, idx); found {
+			return (uint64(i) << l.shift) | idx, true
 		}
+
+		idx = 0
 	}
 
-	return 0, false
+	return math.MaxUint64, false
+}
+
+func (n *inode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
+
+	for i, idx := int(startIdx>>l.shift), startIdx&l.mask; i < l.total; i++ {
+
+		next := n.nodes[i]
+
+		if idx, found = next.findclr(l, idx); found {
+			return (uint64(i) << l.shift) | idx, true
+		}
+
+		idx = 0
+	}
+
+	return math.MaxUint64, false
 }
 
 func (n *inode) String() string {
-	return fmt.Sprintf("inode(%p): level=%p allset=%d allclr=%d nodes=%v",
-		n, n.level, n.allSet, n.allClr, n.nodes)
+	return fmt.Sprintf("inode(%p): level=%p nSet=%d nClr=%d nodes=%v",
+		n, n.level, n.nSet, n.nClr, n.nodes)
 }
