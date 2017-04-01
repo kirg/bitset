@@ -52,7 +52,7 @@ func TestBitsetSetClear(t *testing.T) {
 
 			b := New(cfg)
 
-			i := b.Cap() / 2
+			i := b.MaxIndex() / 2
 
 			assert.NotNil(t, b.Set(i))
 			assert.EqualValues(t, b.Count(), 1)
@@ -70,7 +70,7 @@ func TestBitsetSetClear(t *testing.T) {
 			assert.EqualValues(t, b.Count(), 0)
 			assert.EqualValues(t, b.Test(i), false)
 
-			i = b.Cap() - 1
+			i = b.MaxIndex()
 			assert.EqualValues(t, b.Test(i), false)
 			assert.NotNil(t, b.Clear(i))
 			assert.EqualValues(t, b.Test(i), false)
@@ -90,7 +90,7 @@ func TestBitsetNextSet(t *testing.T) {
 			idx, found := b.NextSet(0)
 			assert.EqualValues(t, found, false)
 
-			for i := uint64(0); i < b.Cap(); i++ {
+			for i := uint64(0); i <= b.MaxIndex(); i++ {
 
 				b.Set(i)
 				idx, found = b.NextSet(0)
@@ -119,21 +119,32 @@ func TestBitsetNextClear(t *testing.T) {
 
 			b := New(cfg)
 
+			// set all
+			b.ForEachClear(func(idx uint64) {
+				b.Set(idx)
+			})
+
 			idx, found := b.NextClear(0)
-			assert.EqualValues(t, found, true)
-			assert.EqualValues(t, idx, 0)
+			assert.EqualValues(t, found, false)
 
-			i := b.Cap() / 2
+			for i := uint64(0); i <= b.MaxIndex(); i++ {
 
-			b.Set(i)
-			idx, found = b.NextClear(i)
-			assert.EqualValues(t, true, found)
-			assert.EqualValues(t, i+1, idx)
+				b.Clear(i)
+				idx, found = b.NextClear(0)
+				assert.EqualValues(t, true, found)
+				assert.EqualValues(t, i, idx)
 
-			b.Clear(i)
-			idx, found = b.NextClear(i)
-			assert.EqualValues(t, true, found)
-			assert.EqualValues(t, i, idx)
+				idx, found = b.NextClear(i)
+				assert.EqualValues(t, true, found)
+				assert.EqualValues(t, i, idx)
+
+				idx, found = b.NextClear(i + 1)
+				assert.EqualValues(t, false, found)
+
+				b.Set(i)
+				idx, found = b.NextClear(0)
+				assert.EqualValues(t, false, found)
+			}
 		})
 	}
 }

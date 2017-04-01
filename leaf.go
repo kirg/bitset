@@ -36,9 +36,9 @@ func newLeafClr(l *level) *leaf {
 
 	bits := make([]uint64, 1+((l.total-1)/64))
 
-	// for i := range bits {
-	// 	bits[i] = allClearBits
-	// }
+	for i := range bits {
+		bits[i] = allClearBits // TODO: no-op
+	}
 
 	return &leaf{
 		level:  l,

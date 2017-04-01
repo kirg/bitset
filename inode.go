@@ -83,6 +83,8 @@ func (in *inode) set(l *level, idx uint64) (set bool, replace node) {
 		in.nClr--
 	}
 
+	in.nodes[i] = repl // replace nextNode
+
 	switch repl.(type) {
 	case *setnode:
 		if in.nSet++; in.nSet == l.total {
@@ -97,7 +99,6 @@ func (in *inode) set(l *level, idx uint64) (set bool, replace node) {
 		}
 	}
 
-	in.nodes[i] = repl // replace nextNode
 	return true, in
 }
 
@@ -123,6 +124,8 @@ func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 		in.nClr--
 	}
 
+	in.nodes[i] = repl // replace nextNode
+
 	switch repl.(type) {
 	case *setnode:
 		if in.nSet++; in.nSet == l.total {
@@ -137,7 +140,6 @@ func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 		}
 	}
 
-	in.nodes[i] = repl // replace nextNode
 	return true, in
 }
 

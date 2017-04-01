@@ -61,20 +61,8 @@ func initLevels(levelBits []uint) (rootLevel *level, maxIdx uint64) {
 		return nil, math.MaxInt64
 	}
 
+	rootLevel = levels[len(levelBits)-1]
 	maxIdx = (uint64(1) << shift) - 1
-
-	rootLevel = &level{
-		shift: shift,
-		mask:  (uint64(1) << shift) - 1,
-		total: 1,
-		next:  next,
-		leaf:  len(levelBits) == 0,
-
-		height: len(levelBits),
-		bits:   0,
-
-		numNodes: 0, // #stats
-	}
 
 	return
 }

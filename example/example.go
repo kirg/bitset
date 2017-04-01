@@ -7,7 +7,17 @@ import (
 
 func main() {
 
-	b := bitset.New([]uint{4, 4, 4, 4, 0})
+	b := bitset.New([]uint{5, 4, 3, 2, 1, 0})
+
+	fmt.Printf("init -> max=%d count=%d stats=%v\nfinal -> count=%d stats=%v\n",
+		b.MaxIndex(), b.Count(), b.Stats(),
+		b.ForEachClear(func(i uint64) {
+			b.Set(i)
+			fmt.Printf("Set(%d) -> %v\n", i, b.Stats())
+		}).ForEachSet(func(i uint64) {
+			b.Clear(i)
+			fmt.Printf("Clear(%d) -> %v\n", i, b.Stats())
+		}).Count(), b.Stats())
 
 	/*
 		idx, found := b.NextClear(0)
@@ -30,7 +40,9 @@ func main() {
 		fmt.Printf("NextClear(%x): idx=%x found=%v\n", i, idx, found)
 	*/
 
-	fmt.Printf("init -> cap=%d stats=%v\n", b.Cap(), b.Stats())
+	idx, found := b.Set(b.MaxIndex()).NextSet(0)
+	fmt.Printf("idx=%v found=%v\n", idx, found)
+
 	/*
 		for i := uint64(0); i <= b.Cap(); i++ {
 			b.Set(i)
@@ -38,12 +50,4 @@ func main() {
 		}
 	*/
 
-	fmt.Printf("final -> count=%d stats=%v\n",
-		b.ForEachClear(0, b.Cap(), func(i uint64) {
-			b.Set(i)
-			fmt.Printf("Set(%d) -> %v\n", i, b.Stats())
-		}).ForEachSet(0, b.Cap(), func(i uint64) {
-			b.Clear(i)
-			fmt.Printf("Clear(%d) -> %v\n", i, b.Stats())
-		}).Count(), b.Stats())
 }

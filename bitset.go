@@ -217,13 +217,17 @@ func (t *bitset) ForEachClearRange(start, end uint64, do func(idx uint64)) Bitse
 
 func (t *bitset) Stats() (numNodes []int) {
 
-	/*
-		numNodes = make([]int, len(t.levels))
+	l := t.rootLevel
 
-		for i, l := range t.levels {
-			numNodes[i] = l.numNodes
+	for {
+		numNodes = append(numNodes, l.numNodes)
+
+		if l.next == nil {
+			break
 		}
-	*/
+
+		l = l.next
+	}
 
 	return
 }

@@ -21,7 +21,6 @@ func sparsify(l *level, n node, set bool) (replace node) {
 func desparsify(l *level, n node, set bool) (replace node) {
 
 	delNode(l, n)
-
 	return newNode(l, false, set)
 }
 
@@ -36,6 +35,7 @@ func newNode(l *level, sparse, set bool) (n node) {
 		return newSparseClr(l)
 	}
 
+	// non-sparse node, so count
 	l.numNodes++ // #stats
 
 	if l.leaf {
@@ -68,8 +68,8 @@ func delNode(l *level, n node) {
 		l.numNodes--
 
 		in := n.(*inode)
-		for _, n := range in.nodes {
-			delNode(l.next, n)
+		for _, nx := range in.nodes {
+			delNode(l.next, nx)
 		}
 
 	case *leaf:
