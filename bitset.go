@@ -2,6 +2,7 @@ package bitset
 
 import (
 	"fmt"
+	"math"
 )
 
 const getStats = false
@@ -13,14 +14,14 @@ type (
 		Clear(idx uint64) Bitset
 		Swap(idx uint64, set bool) (swapped bool)
 		Count() uint64
+		Max() uint64
 		Cap() uint64
-		MaxIndex() uint64
 
 		NextSet(start uint64) (idx uint64, found bool)
 		NextClear(start uint64) (idx uint64, found bool)
 
-		// PrevSet(start uint64) (idx uint64, found bool)
-		// PrevClear(start uint64) (idx uint64, found bool)
+		PrevSet(start uint64) (idx uint64, found bool)
+		PrevClear(start uint64) (idx uint64, found bool)
 
 		ForEachSet(do func(idx uint64)) Bitset
 		ForEachClear(do func(idx uint64)) Bitset
@@ -59,12 +60,12 @@ func New(levelBits []uint) Bitset {
 	}
 }
 
-func (t *bitset) Cap() uint64 {
-	return t.max + 1 // could overflow!
+func (t *bitset) Max() uint64 {
+	return t.max
 }
 
-func (t *bitset) MaxIndex() uint64 {
-	return t.max
+func (t *bitset) Cap() uint64 {
+	return t.max + 1 // could overflow, if Max == math.MaxUint64!
 }
 
 func (t *bitset) Test(idx uint64) (ret bool) {
@@ -135,12 +136,38 @@ func (t *bitset) Count() uint64 {
 
 func (t *bitset) NextSet(start uint64) (idx uint64, found bool) {
 
-	return t.root.findset(t.rootLevel, start)
+	if start > t.max {
+		return math.MaxUint64, false
+	}
+
+	return t.root.nextset(t.rootLevel, start)
 }
 
 func (t *bitset) NextClear(start uint64) (idx uint64, found bool) {
 
-	return t.root.findclr(t.rootLevel, start)
+	if start > t.max {
+		return math.MaxUint64, false
+	}
+
+	return t.root.nextclr(t.rootLevel, start)
+}
+
+func (t *bitset) PrevSet(start uint64) (idx uint64, found bool) {
+
+	if start > t.max {
+		start = t.max
+	}
+
+	return t.root.prevset(t.rootLevel, start)
+}
+
+func (t *bitset) PrevClear(start uint64) (idx uint64, found bool) {
+
+	if start > t.max {
+		start = t.max
+	}
+
+	return t.root.prevclr(t.rootLevel, start)
 }
 
 func (t *bitset) ForEachSet(do func(idx uint64)) Bitset {
@@ -149,7 +176,7 @@ func (t *bitset) ForEachSet(do func(idx uint64)) Bitset {
 
 		var found bool
 
-		i, found = t.root.findset(t.rootLevel, i) // TODO: send down 'end' to terminate search sooner
+		i, found = t.root.nextset(t.rootLevel, i) // TODO: send down 'end' to terminate search sooner
 
 		if !found {
 			break // all done
@@ -167,7 +194,7 @@ func (t *bitset) ForEachClear(do func(idx uint64)) Bitset {
 
 		var found bool
 
-		i, found = t.root.findclr(t.rootLevel, i) // TODO: send down 'end' to terminate search sooner
+		i, found = t.root.nextclr(t.rootLevel, i) // TODO: send down 'end' to terminate search sooner
 
 		if !found {
 			break // all done
@@ -181,11 +208,15 @@ func (t *bitset) ForEachClear(do func(idx uint64)) Bitset {
 
 func (t *bitset) ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset {
 
-	for i := start; i <= end && i <= t.max; i++ {
+	if end > t.max {
+		end = t.max
+	}
+
+	for i := start; i <= end; i++ {
 
 		var found bool
 
-		i, found = t.root.findset(t.rootLevel, start) // TODO: send down 'end' to terminate search sooner
+		i, found = t.root.nextset(t.rootLevel, start) // TODO: send down 'end' to terminate search sooner
 
 		if !found {
 			break // all done
@@ -199,11 +230,15 @@ func (t *bitset) ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset 
 
 func (t *bitset) ForEachClearRange(start, end uint64, do func(idx uint64)) Bitset {
 
+	if end > t.max {
+		end = t.max
+	}
+
 	for i := start; i <= end && i <= t.max; i++ {
 
 		var found bool
 
-		i, found = t.root.findclr(t.rootLevel, start) // TODO: send down 'end' to terminate search sooner
+		i, found = t.root.nextclr(t.rootLevel, start) // TODO: send down 'end' to terminate search sooner
 
 		if !found {
 			break // all done
@@ -233,7 +268,7 @@ func (t *bitset) Stats() (numNodes []int) {
 }
 
 func dbg0(f string, a ...interface{}) {
-	fmt.Printf(f, a...)
+	// fmt.Printf(f, a...)
 }
 
 func dbg1(f string, a ...interface{}) {

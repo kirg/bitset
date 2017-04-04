@@ -49,6 +49,10 @@ func (n *inode) test(l *level, idx uint64) bool {
 
 	i, idx := int(idx>>l.shift), idx&l.mask
 
+	if i >= l.total {
+		return false
+	}
+
 	switch next := n.nodes[i]; next.(type) {
 	case *setnode:
 		return true
@@ -143,13 +147,19 @@ func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 	return true, in
 }
 
-func (n *inode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
+func (n *inode) nextset(l *level, start uint64) (idx uint64, found bool) {
 
-	for i, idx := int(startIdx>>l.shift), startIdx&l.mask; i < l.total; i++ {
+	i, idx := int(start>>l.shift), start&l.mask
+
+	if i >= l.total {
+		return 0, false
+	}
+
+	for ; i < l.total; i++ {
 
 		next := n.nodes[i]
 
-		if idx, found = next.findset(l.next, idx); found {
+		if idx, found = next.nextset(l.next, idx); found {
 			return (uint64(i) << l.shift) | idx, true
 		}
 
@@ -159,13 +169,41 @@ func (n *inode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
 	return math.MaxUint64, false
 }
 
-func (n *inode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
+func (n *inode) prevset(l *level, start uint64) (idx uint64, found bool) {
 
-	for i, idx := int(startIdx>>l.shift), startIdx&l.mask; i < l.total; i++ {
+	i, idx := int(start>>l.shift), start&l.mask
+
+	if i >= l.total {
+		i, idx = l.total-1, math.MaxUint64
+	}
+
+	for ; i >= 0; i-- {
 
 		next := n.nodes[i]
 
-		if idx, found = next.findclr(l.next, idx); found {
+		if idx, found = next.prevset(l.next, idx); found {
+			return (uint64(i) << l.shift) | idx, true
+		}
+
+		idx = math.MaxUint64
+	}
+
+	return 0, false
+}
+
+func (n *inode) nextclr(l *level, start uint64) (idx uint64, found bool) {
+
+	i, idx := int(start>>l.shift), start&l.mask
+
+	if i >= l.total {
+		return 0, false
+	}
+
+	for ; i < l.total; i++ {
+
+		next := n.nodes[i]
+
+		if idx, found = next.nextclr(l.next, idx); found {
 			return (uint64(i) << l.shift) | idx, true
 		}
 
@@ -173,6 +211,28 @@ func (n *inode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
 	}
 
 	return math.MaxUint64, false
+}
+
+func (n *inode) prevclr(l *level, start uint64) (idx uint64, found bool) {
+
+	i, idx := int(start>>l.shift), start&l.mask
+
+	if i >= l.total {
+		i, idx = l.total-1, math.MaxUint64
+	}
+
+	for ; i >= 0; i-- {
+
+		next := n.nodes[i]
+
+		if idx, found = next.prevclr(l.next, idx); found {
+			return (uint64(i) << l.shift) | idx, true
+		}
+
+		idx = math.MaxUint64
+	}
+
+	return 0, false
 }
 
 func (n *inode) String() string {

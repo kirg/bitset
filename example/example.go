@@ -10,7 +10,7 @@ func main() {
 	b := bitset.New([]uint{5, 4, 3, 2, 1, 0})
 
 	fmt.Printf("init -> max=%d count=%d stats=%v\nfinal -> count=%d stats=%v\n",
-		b.MaxIndex(), b.Count(), b.Stats(),
+		b.Max(), b.Count(), b.Stats(),
 		b.ForEachClear(func(i uint64) {
 			b.Set(i)
 			fmt.Printf("Set(%d) -> %v\n", i, b.Stats())
@@ -40,7 +40,7 @@ func main() {
 		fmt.Printf("NextClear(%x): idx=%x found=%v\n", i, idx, found)
 	*/
 
-	idx, found := b.Set(b.MaxIndex()).NextSet(0)
+	idx, found := b.Set(b.Max()).NextSet(0)
 	fmt.Printf("idx=%v found=%v\n", idx, found)
 
 	/*

@@ -5,8 +5,10 @@ type (
 		test(l *level, idx uint64) (set bool)
 		set(l *level, idx uint64) (set bool, replace node)
 		clr(l *level, idx uint64) (cleared bool, replace node)
-		findset(l *level, startIdx uint64) (idx uint64, found bool)
-		findclr(l *level, startIdx uint64) (idx uint64, found bool)
+		nextset(l *level, startIdx uint64) (idx uint64, found bool)
+		nextclr(l *level, startIdx uint64) (idx uint64, found bool)
+		prevset(l *level, startIdx uint64) (idx uint64, found bool)
+		prevclr(l *level, startIdx uint64) (idx uint64, found bool)
 	}
 )
 
@@ -56,6 +58,7 @@ func newNode(l *level, sparse, set bool) (n node) {
 
 func delNode(l *level, n node) {
 
+	// FIXME: avoid type switch (for perf)?
 	switch n.(type) {
 	case *setnode:
 		return

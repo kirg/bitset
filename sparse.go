@@ -30,12 +30,25 @@ func (sn *setnode) clr(l *level, idx uint64) (cleared bool, replace node) {
 	return desparsify(l, sn, true).clr(l, idx)
 }
 
-func (sn *setnode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
-	return idx, true
+func (sn *setnode) nextset(l *level, start uint64) (idx uint64, found bool) {
+	return start, true
 }
 
-func (sn *setnode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
-	return idx, false
+func (sn *setnode) prevset(l *level, start uint64) (idx uint64, found bool) {
+
+	if start >= uint64(l.total) {
+		return uint64(l.total - 1), true
+	}
+
+	return start, true
+}
+
+func (sn *setnode) nextclr(l *level, start uint64) (idx uint64, found bool) {
+	return math.MaxUint64, false
+}
+
+func (sn *setnode) prevclr(l *level, start uint64) (idx uint64, found bool) {
+	return 0, false
 }
 
 // clrnode defines a sparse node with all bits clear
@@ -55,10 +68,23 @@ func (cn *clrnode) clr(l *level, idx uint64) (cleared bool, replace node) {
 	return false, cn
 }
 
-func (cn *clrnode) findset(l *level, startIdx uint64) (idx uint64, found bool) {
-	return startIdx, false
+func (cn *clrnode) nextset(l *level, start uint64) (idx uint64, found bool) {
+	return math.MaxUint64, false
 }
 
-func (cn *clrnode) findclr(l *level, startIdx uint64) (idx uint64, found bool) {
-	return startIdx, true
+func (cn *clrnode) prevset(l *level, start uint64) (idx uint64, found bool) {
+	return 0, false
+}
+
+func (cn *clrnode) nextclr(l *level, start uint64) (idx uint64, found bool) {
+	return start, true
+}
+
+func (cn *clrnode) prevclr(l *level, start uint64) (idx uint64, found bool) {
+
+	if start >= uint64(l.total) {
+		return uint64(l.total - 1), true
+	}
+
+	return start, true
 }

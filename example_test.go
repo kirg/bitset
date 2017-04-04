@@ -1,12 +1,14 @@
-package bitset
+package bitset_example
 
 import (
+	"bitset"
+
 	"fmt"
 )
 
 func ExampleBitset() {
 
-	b := New([]uint{16, 8, 4})
+	b := bitset.New([]uint{16, 8, 4})
 
 	idx, found := b.NextClear(0)
 	fmt.Printf("NextClear(%d): idx=%v found=%v\n", 0, idx, found)
