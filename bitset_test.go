@@ -49,7 +49,7 @@ func TestBitsetMaxIndex(t *testing.T) {
 	}
 }
 
-func TestBitsetSetClear(t *testing.T) {
+func TestBitsetSetClearTest(t *testing.T) {
 
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
@@ -80,6 +80,72 @@ func TestBitsetSetClear(t *testing.T) {
 			assert.EqualValues(t, b.Test(i), false)
 			assert.NotNil(t, b.Set(i))
 			assert.EqualValues(t, b.Test(i), true)
+		})
+	}
+}
+
+func TestBitsetAnyAllNone(t *testing.T) {
+
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
+
+			b := bitset.New(cfg)
+
+			assert.EqualValues(t, false, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, true, b.None())
+
+			assert.NotNil(t, b.SetAll())
+			assert.EqualValues(t, true, b.Any())
+			assert.EqualValues(t, true, b.All())
+			assert.EqualValues(t, false, b.None())
+
+			assert.NotNil(t, b.ClearAll())
+			assert.EqualValues(t, false, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, true, b.None())
+
+			i := b.Max() / 2
+			assert.NotNil(t, b.Set(i))
+
+			assert.EqualValues(t, true, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, false, b.None())
+
+			assert.NotNil(t, b.Clear(i))
+			assert.EqualValues(t, false, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, true, b.None())
+		})
+	}
+}
+
+func TestBitsetSetAllClearAll(t *testing.T) {
+
+	for _, cfg := range configs {
+		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
+
+			b := bitset.New(cfg)
+
+			i := b.Max() / 2
+			assert.EqualValues(t, false, b.Test(i))
+			assert.EqualValues(t, false, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, true, b.None())
+
+			assert.NotNil(t, b.SetAll())
+			assert.EqualValues(t, true, b.Test(i))
+			assert.EqualValues(t, true, b.Any())
+			assert.EqualValues(t, true, b.All())
+			assert.EqualValues(t, false, b.None())
+			assert.EqualValues(t, b.Cap(), b.Count())
+
+			assert.NotNil(t, b.ClearAll())
+			assert.EqualValues(t, false, b.Test(i))
+			assert.EqualValues(t, false, b.Any())
+			assert.EqualValues(t, false, b.All())
+			assert.EqualValues(t, true, b.None())
+			assert.EqualValues(t, 0, b.Count())
 		})
 	}
 }

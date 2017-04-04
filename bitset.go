@@ -5,8 +5,6 @@ import (
 	"math"
 )
 
-const getStats = false
-
 type (
 	Bitset interface {
 		Test(idx uint64) bool
@@ -31,6 +29,13 @@ type (
 
 		// SetBits(startIdx, endIdx uint64)
 		// ClearBits(startIdx, endIdx uint64)
+
+		Any() bool
+		All() bool
+		None() bool
+
+		ClearAll() Bitset
+		SetAll() Bitset
 
 		Stats() []int // #stats
 	}
@@ -168,6 +173,43 @@ func (t *bitset) PrevClear(start uint64) (idx uint64, found bool) {
 	}
 
 	return t.root.prevclr(t.rootLevel, start)
+}
+
+func (t *bitset) Any() bool {
+
+	return !t.None()
+}
+
+func (t *bitset) All() bool {
+
+	_, ok := t.root.(*setnode)
+	return ok
+}
+
+func (t *bitset) None() bool {
+
+	_, ok := t.root.(*clrnode)
+	return ok
+}
+
+func (t *bitset) SetAll() Bitset {
+
+	if _, ok := t.root.(*setnode); !ok {
+		t.root = sparsify(t.rootLevel, t.root, true)
+		t.count = t.max + 1 // NB: could overflow!
+	}
+
+	return t
+}
+
+func (t *bitset) ClearAll() Bitset {
+
+	if _, ok := t.root.(*clrnode); !ok {
+		t.root = sparsify(t.rootLevel, t.root, false)
+		t.count = 0
+	}
+
+	return t
 }
 
 func (t *bitset) ForEachSet(do func(idx uint64)) Bitset {

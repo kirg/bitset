@@ -1,4 +1,4 @@
-package bitset_example
+package bitset_test
 
 import (
 	"bitset"
