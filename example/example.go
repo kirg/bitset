@@ -7,16 +7,16 @@ import (
 
 func main() {
 
-	b := bitset.New([]uint{5, 4, 3, 2, 1, 0})
+	b := bitset.New([]uint{6, 5, 4, 3, 2, 1, 0})
 
-	fmt.Printf("init -> max=%d count=%d stats=%v\nfinal -> count=%d stats=%v\n",
+	fmt.Printf("\ninit -> max=%d count=%d stats=%v\nfinal -> count=%d stats=%v\n",
 		b.Max(), b.Count(), b.Stats(),
 		b.ForEachClear(func(i uint64) {
 			b.Set(i)
-			fmt.Printf("Set(%d) -> %v\n", i, b.Stats())
+			fmt.Printf("\rSet(%d) -> %v   ", i, b.Stats())
 		}).ForEachSet(func(i uint64) {
 			b.Clear(i)
-			fmt.Printf("Clear(%d) -> %v\n", i, b.Stats())
+			fmt.Printf("\rClear(%d) -> %v   ", i, b.Stats())
 		}).Count(), b.Stats())
 
 	/*
