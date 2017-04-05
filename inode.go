@@ -71,14 +71,19 @@ func (in *inode) set(l *level, idx uint64) (set bool, replace node) {
 
 	next := in.nodes[i]
 
+	// propagate down the 'set'
 	set, repl := next.set(l.next, idx)
 
 	if repl == next {
+		// node not replaced, just return
 		return set, in
 	}
 
-	// assert( set == true ) //
+	// the node needs to be replaced //
 
+	// assert( set == true )
+
+	// update nSet/nClr based on node being replaced
 	switch next.(type) {
 	case *setnode:
 		in.nSet--
@@ -87,8 +92,9 @@ func (in *inode) set(l *level, idx uint64) (set bool, replace node) {
 		in.nClr--
 	}
 
-	in.nodes[i] = repl // replace nextNode
+	in.nodes[i] = repl // replace node
 
+	// update nSet/nClr based on new node, and sparsify the node, if needed
 	switch repl.(type) {
 	case *setnode:
 		if in.nSet++; in.nSet == l.total {
@@ -112,14 +118,19 @@ func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 
 	next := in.nodes[i]
 
+	// propagate down the 'clr'
 	cleared, repl := next.clr(l.next, idx)
 
 	if repl == next {
+		// node not replaced, just return
 		return cleared, in
 	}
 
+	// the node needs to be replaced //
+
 	// assert( cleared == true ) //
 
+	// update nSet/nClr based on node being replaced
 	switch next.(type) {
 	case *setnode:
 		in.nSet--
@@ -130,6 +141,7 @@ func (in *inode) clr(l *level, idx uint64) (cleared bool, replace node) {
 
 	in.nodes[i] = repl // replace nextNode
 
+	// update nSet/nClr based on new node, and sparsify the node, if needed
 	switch repl.(type) {
 	case *setnode:
 		if in.nSet++; in.nSet == l.total {

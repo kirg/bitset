@@ -1,30 +1,21 @@
 package bitset
 
 type (
+	// node is the interface that is implemented by the four types of nodes:
+	// - leaf (leaf node, actual storage for bits in []uint64)
+	// - inode (intermediate nodes in the tree)
+	// - setnode (sparse node that indicates everything under is "set")
+	// - clrnode (sparse node that indicates everything under is "clear")
 	node interface {
 		test(l *level, idx uint64) (set bool)
 		set(l *level, idx uint64) (set bool, replace node)
 		clr(l *level, idx uint64) (cleared bool, replace node)
-		nextset(l *level, startIdx uint64) (idx uint64, found bool)
-		nextclr(l *level, startIdx uint64) (idx uint64, found bool)
-		prevset(l *level, startIdx uint64) (idx uint64, found bool)
-		prevclr(l *level, startIdx uint64) (idx uint64, found bool)
+		nextset(l *level, start uint64) (idx uint64, found bool)
+		nextclr(l *level, start uint64) (idx uint64, found bool)
+		prevset(l *level, start uint64) (idx uint64, found bool)
+		prevclr(l *level, start uint64) (idx uint64, found bool)
 	}
 )
-
-// returns an allset/allclr sparse-node to replace given node
-func sparsify(l *level, n node, set bool) (replace node) {
-
-	delNode(l, n)
-	return newNode(l, true, set)
-}
-
-// returns an allset/allclr 'full' node to replace a sparse node
-func desparsify(l *level, n node, set bool) (replace node) {
-
-	delNode(l, n)
-	return newNode(l, false, set)
-}
 
 func newNode(l *level, sparse, set bool) (n node) {
 
@@ -78,4 +69,18 @@ func delNode(l *level, n node) {
 	case *leaf:
 		l.numNodes--
 	}
+}
+
+// returns an allset/allclr sparse-node to replace given node
+func sparsify(l *level, n node, set bool) (replace node) {
+
+	delNode(l, n)
+	return newNode(l, true, set)
+}
+
+// returns an allset/allclr 'full' node to replace a sparse node
+func desparsify(l *level, n node, set bool) (replace node) {
+
+	delNode(l, n)
+	return newNode(l, false, set)
 }
