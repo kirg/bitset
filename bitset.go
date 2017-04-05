@@ -11,6 +11,7 @@ type (
 		Set(idx uint64) Bitset
 		Clear(idx uint64) Bitset
 		Swap(idx uint64, set bool) (swapped bool)
+
 		Count() uint64
 		Max() uint64
 		Cap() uint64
@@ -20,6 +21,13 @@ type (
 
 		PrevSet(start uint64) (idx uint64, found bool)
 		PrevClear(start uint64) (idx uint64, found bool)
+
+		Any() bool
+		All() bool
+		None() bool
+
+		SetAll() Bitset
+		ClearAll() Bitset
 
 		ForEachSet(do func(idx uint64)) Bitset
 		ForEachClear(do func(idx uint64)) Bitset
@@ -40,12 +48,13 @@ type (
 		// AllRange(start, end uint64) bool
 		// NoneRange(start, end uint64) bool
 
-		Any() bool
-		All() bool
-		None() bool
+		// And(b Bitset) Bitset
+		// Or(b Bitset) Bitset
+		// Xor(b Bitset) Bitset
+		// Not() Bitset
+		// Equal(b Bitset) bool
 
-		ClearAll() Bitset
-		SetAll() Bitset
+		// Clone() Bitset
 
 		Stats() []int // #stats
 	}
