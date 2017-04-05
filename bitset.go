@@ -27,8 +27,18 @@ type (
 		ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset
 		ForEachClearRange(start, end uint64, do func(idx uint64)) Bitset
 
-		// SetBits(startIdx, endIdx uint64)
-		// ClearBits(startIdx, endIdx uint64)
+		// GetSetRanges(start, end uint64) []interval.Interval
+
+		// SetRange(start, end uint64) Bitset
+		// ClearRange(start, end uint64) Bitset
+		// FlipRange(start, end uint64) Bitset
+		// NextSetRange(start, end uint64) (idx uint64, found bool)
+		// NextClearRange(start, end uint64) (idx uint64, found bool)
+		// PrevSetRange(start, end uint64) (idx uint64, found bool)
+		// PrevClearRange(start, end uint64) (idx uint64, found bool)
+		// AnyRange(start, end uint64) bool
+		// AllRange(start, end uint64) bool
+		// NoneRange(start, end uint64) bool
 
 		Any() bool
 		All() bool
