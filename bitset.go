@@ -29,11 +29,11 @@ type (
 		SetAll() Bitset
 		ClearAll() Bitset
 
-		ForEachSet(do func(idx uint64)) Bitset
-		ForEachClear(do func(idx uint64)) Bitset
+		ForEachSet(do func(idx uint64) bool) Bitset
+		ForEachClear(do func(idx uint64) bool) Bitset
 
-		ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset
-		ForEachClearRange(start, end uint64, do func(idx uint64)) Bitset
+		ForEachSetRange(start, end uint64, do func(idx uint64) bool) Bitset
+		ForEachClearRange(start, end uint64, do func(idx uint64) bool) Bitset
 
 		// GetSetRanges(start, end uint64) []interval.Interval
 
@@ -231,7 +231,7 @@ func (t *bitset) ClearAll() Bitset {
 	return t
 }
 
-func (t *bitset) ForEachSet(do func(idx uint64)) Bitset {
+func (t *bitset) ForEachSet(do func(idx uint64) bool) Bitset {
 
 	for i := uint64(0); i <= t.max; i++ {
 
@@ -239,17 +239,15 @@ func (t *bitset) ForEachSet(do func(idx uint64)) Bitset {
 
 		i, found = t.root.nextset(t.rootLevel, i) // TODO: send down 'end' to terminate search sooner
 
-		if !found {
+		if !found || !do(i) {
 			break // all done
 		}
-
-		do(i)
 	}
 
 	return t
 }
 
-func (t *bitset) ForEachClear(do func(idx uint64)) Bitset {
+func (t *bitset) ForEachClear(do func(idx uint64) bool) Bitset {
 
 	for i := uint64(0); i <= t.max; i++ {
 
@@ -261,13 +259,15 @@ func (t *bitset) ForEachClear(do func(idx uint64)) Bitset {
 			break // all done
 		}
 
-		do(i)
+		if !do(i) {
+			break
+		}
 	}
 
 	return t
 }
 
-func (t *bitset) ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset {
+func (t *bitset) ForEachSetRange(start, end uint64, do func(idx uint64) bool) Bitset {
 
 	if end > t.max {
 		end = t.max
@@ -283,13 +283,15 @@ func (t *bitset) ForEachSetRange(start, end uint64, do func(idx uint64)) Bitset 
 			break // all done
 		}
 
-		do(i)
+		if !do(i) {
+			break
+		}
 	}
 
 	return t
 }
 
-func (t *bitset) ForEachClearRange(start, end uint64, do func(idx uint64)) Bitset {
+func (t *bitset) ForEachClearRange(start, end uint64, do func(idx uint64) bool) Bitset {
 
 	if end > t.max {
 		end = t.max
@@ -305,7 +307,9 @@ func (t *bitset) ForEachClearRange(start, end uint64, do func(idx uint64)) Bitse
 			break // all done
 		}
 
-		do(i)
+		if !do(i) {
+			break
+		}
 	}
 
 	return t
