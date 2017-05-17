@@ -1,8 +1,6 @@
-package bitset_test
+package bitset
 
 import (
-	"bitset"
-
 	"fmt"
 	"math"
 	"testing"
@@ -24,7 +22,7 @@ func TestBitsetNewCount(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			assert.EqualValues(t, b.Count(), 0, "new bitset should have count 0")
 		})
@@ -36,7 +34,7 @@ func TestBitsetMaxIndex(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			var bits uint = 0
 			for _, t := range cfg {
@@ -54,7 +52,7 @@ func TestBitsetSetClearTest(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			i := b.Max() / 2
 
@@ -89,7 +87,7 @@ func TestBitsetAnyAllNone(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			assert.EqualValues(t, false, b.Any())
 			assert.EqualValues(t, false, b.All())
@@ -125,7 +123,7 @@ func TestBitsetSetAllClearAll(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			i := b.Max() / 2
 			assert.EqualValues(t, false, b.Test(i))
@@ -155,7 +153,7 @@ func TestBitsetNextSet(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			idx, found := b.NextSet(0)
 			assert.EqualValues(t, found, false)
@@ -190,7 +188,7 @@ func TestBitsetPrevSet(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			idx, found := b.PrevSet(0)
 			assert.EqualValues(t, false, found)
@@ -229,11 +227,12 @@ func TestBitsetNextClear(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			// set all
-			b.ForEachClear(func(idx uint64) {
+			b.ForEachClear(func(idx uint64) bool {
 				b.Set(idx)
+				return true
 			})
 
 			idx, found := b.NextClear(0)
@@ -266,11 +265,12 @@ func TestBitsetPrevClear(t *testing.T) {
 	for _, cfg := range configs {
 		t.Run(fmt.Sprintf("%v", cfg), func(t *testing.T) {
 
-			b := bitset.New(cfg)
+			b := New(cfg)
 
 			// set all
-			b.ForEachClear(func(idx uint64) {
+			b.ForEachClear(func(idx uint64) bool {
 				b.Set(idx)
+				return true
 			})
 
 			idx, found := b.PrevClear(0)
